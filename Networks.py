@@ -63,7 +63,7 @@ def nonlinear_d(input):
     return tf.nn.leaky_relu(input)
 
 
-
+# the generator and discriminator library
 class Networks_Libs():
     def __init__(self,opt):
         self.opt=opt
@@ -82,162 +82,11 @@ class Networks_Libs():
 
 
     def Get_Networks(self):
-        return self.SCNN_celebA_g, self.SCNN_celebA_d, self.SCNN_celebA_s
-
-
-    #testing area for 32*32
-    #  apply skip connection in doubled SCNN_d
-    def d_t(self, image, reuse=False):
-        with tf.variable_scope('d_a',reuse=tf.AUTO_REUSE) as scope:
-            if reuse:
-                scope.reuse_variables()
-            #compute the image output
-            h0 = tf.nn.leaky_relu(conv2d(image, 64, k_size=3, d_size=1, name='d_h0_conv'))
-            h0 = tf.nn.leaky_relu(conv2d(h0, 64, k_size=3, d_size=1, name='d_h1_conv'))+h0
-            h1 = tf.nn.avg_pool(h0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p0')
-            h2 = tf.nn.leaky_relu((conv2d(h1, 128, k_size=3, d_size=1, name='d_h2_conv')))
-            h2 = tf.nn.leaky_relu((conv2d(h2, 128, k_size=3, d_size=1, name='d_h3_conv')))+h2
-            h3 = tf.nn.avg_pool(h2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p1')
-            h4 = tf.nn.leaky_relu(conv2d(h3, 256, k_size=3, d_size=1, name='d_h4_conv'))
-            h4 = tf.nn.leaky_relu(conv2d(h4, 256, k_size=3, d_size=1, name='d_h5_conv'))+h4
-            h5 = tf.nn.avg_pool(h4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p3')
-            h8 = linear(tf.reshape(h5, [self.opt.batch_size, -1]), 1, 'd_h8_linear')
-
-            return h8
-
-    def g_t(self, z):
-        with tf.variable_scope('g_a') as scope:
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0,512,k_size=3,d_size=1,name='g_h0_conv')))+h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv')))+h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv')))+h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv')))+h6
-            h7 = conv2d(h6, 3, k_size=3, d_size=1, name='g_h9_conv')
-            return tf.nn.tanh(h7)
-
-    def s_t(self, z):
-        with tf.variable_scope('g_a') as scope:
-            scope.reuse_variables()
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h7 = conv2d(h6, 3, k_size=3, d_size=1, name='g_h9_conv')
-            return tf.nn.tanh(h7)
-
-
-    # DenseNet for 64*64
-
-    def DenseNetBlock(self,input,dim_out, BN_use= False, length=3, name='g_'):
-        h1 = input
-        h = input
-        for len in range(length):
-            if BN_use== True:
-                h = conv2d(nonlinear_d(tf.contrib.layers.batch_norm(h1,
-                      decay=0.9,
-                      updates_collections=None,
-                      epsilon=1e-5,
-                      scale=True,
-                      is_training=True,
-                      scope=name+'bn'+str(len))), dim_out, k_size=3, d_size=1, name=name +'conv_'+ str(len))
-            else:
-                h = conv2d(nonlinear_d(h1), dim_out, k_size=3, d_size=1, name=name + 'conv_'+str(len))
-            h1 = tf.concat([h,h1],axis=3)
-
-        return h
-
-    def DenseNet_g(self,z):
-        with tf.variable_scope('generator') as scope:
-            z_ = linear(z, 32 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 32])
-
-            h = self.DenseNetBlock(h, 32, True, name='g_1_')
-            h = conv2d(self.g_bn0(h), 32, k_size=1, d_size=1, name='g_conv_1')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_2_')
-            h = conv2d(self.g_bn1(h), 32, k_size=1, d_size=1, name='g_conv_2')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_3_')
-            h = conv2d(self.g_bn2(h), 32, k_size=1, d_size=1, name='g_conv_3')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_4_')
-            h = conv2d(self.g_bn3(h), 32, k_size=1, d_size=1, name='g_conv_4')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_5_')
-            h = conv2d(tf.nn.relu(self.g_bn4(h)), 3, k_size=3, d_size=1, name='g_conv_5')
-            print(h.shape)
-            return tf.nn.tanh(h)
-
-    def DenseNet_s(self, z):
-        with tf.variable_scope('generator') as scope:
-            scope.reuse_variables()
-            z_ = linear(z, 32 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 32])
-
-            h = self.DenseNetBlock(h, 32, True, name='g_1_')
-            h = conv2d(self.g_bn0(h), 32, k_size=1, d_size=1, name='g_conv_1')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_2_')
-            h = conv2d(self.g_bn1(h), 32, k_size=1, d_size=1, name='g_conv_2')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_3_')
-            h = conv2d(self.g_bn2(h), 32, k_size=1, d_size=1, name='g_conv_3')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_4_')
-            h = conv2d(self.g_bn3(h), 32, k_size=1, d_size=1, name='g_conv_4')
-            h = tf.keras.layers.UpSampling2D(size=(2, 2))(h)
-
-            h = self.DenseNetBlock(h, 32, True, name='g_5_')
-            h = conv2d(tf.nn.relu(self.g_bn4(h)), 3, k_size=3, d_size=1, name='g_conv_5')
-            return tf.nn.tanh(h)
-
-    def DenseNet_d(self, image, reuse=False):
-        with tf.variable_scope('discriminator') as scope:
-            if reuse:
-                scope.reuse_variables()
-            h = conv2d(image, 32, k_size=3,d_size=1, name='d_conv_1')
-
-            h = self.DenseNetBlock(h,32,False,name='d_1_')
-            h = tf.nn.avg_pool(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p0')
-
-            h = self.DenseNetBlock(h, 32, False, name='d_2_')
-            h = tf.nn.avg_pool(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p1')
-
-            h = self.DenseNetBlock(h, 32, False, name='d_3_')
-            h = tf.nn.avg_pool(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p2')
-
-            h = self.DenseNetBlock(h, 32, False, name='d_4_')
-            h = tf.nn.avg_pool(h, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p3')
-
-            h = self.DenseNetBlock(h, 32, False, name='d_5_')
-            print(h.shape)
-            h = linear(tf.reshape(h, [self.opt.batch_size, -1]), 1, 'd_h4_linear')
-            return h
-
+      # for image generation on cifar, choose SCNN_g, SCNN_d, SCNN_s and RCNN_g, RCNN_d, RCNN_s
+      # for image generation on celebA and imagenet, choose SCNN_celebA_g, SCNN_celebA_d, SCNN_celebA_s
+        return self.RCNN_g, self.RCNN_d, self.RCNN_s
+      
+    # image generation on 32*32 resolution
     # standard CNN for cifar------------------------------------------------------------------
     def SCNN_d(self, image, reuse=False):
         with tf.variable_scope('DCGAN_discriminator_nb') as scope:
@@ -289,63 +138,6 @@ class Networks_Libs():
             # h7 = deconv2d(h6, [self.opt.batch_size, 64, 64, 3], name='g_h4')
 
             return tf.nn.tanh(h7)
-
-    # standard CNN doubled for cifar
-    def SCNN_double_d(self, image, reuse=False):
-        with tf.variable_scope('d_a', reuse=tf.AUTO_REUSE) as scope:
-            if reuse:
-                scope.reuse_variables()
-            # compute the image output
-            h0 = tf.nn.leaky_relu(conv2d(image, 64, k_size=3, d_size=1, name='d_h0_conv'))
-            h0 = tf.nn.leaky_relu(conv2d(h0, 64, k_size=3, d_size=1, name='d_h1_conv')) + h0
-            h1 = tf.nn.avg_pool(h0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p0')
-            h2 = tf.nn.leaky_relu((conv2d(h1, 128, k_size=3, d_size=1, name='d_h2_conv')))
-            h2 = tf.nn.leaky_relu((conv2d(h2, 128, k_size=3, d_size=1, name='d_h3_conv'))) + h2
-            h3 = tf.nn.avg_pool(h2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p1')
-            h4 = tf.nn.leaky_relu(conv2d(h3, 256, k_size=3, d_size=1, name='d_h4_conv'))
-            h4 = tf.nn.leaky_relu(conv2d(h4, 256, k_size=3, d_size=1, name='d_h5_conv')) + h4
-            h5 = tf.nn.avg_pool(h4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p3')
-            h6 = tf.nn.leaky_relu(conv2d(h5, 512, k_size=3, d_size=1, name='d_h6_conv'))
-            h6 = tf.nn.leaky_relu(conv2d(h6, 512, k_size=3, d_size=1, name='d_h7_conv')) + h6
-            h8 = linear(tf.reshape(h6, [self.opt.batch_size, -1]), 1, 'd_h8_linear')
-            return h8
-
-    def SCNN_double_g(self, z):
-        with tf.variable_scope('g_a') as scope:
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h9 = conv2d(h6, 3, k_size=3, d_size=1, name='g_h9_conv')
-            return tf.nn.tanh(h9)
-
-    def SCNN_double_s(self, z):
-        with tf.variable_scope('g_a') as scope:
-            scope.reuse_variables()
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h9 = conv2d(h6, 3, k_size=3, d_size=1, name='g_h9_conv')
-            return tf.nn.tanh(h9)
     #------------------------------------------------------------------------------------------
     #-------------------------------------------------------------------------------------------
     # ResNet Based CNN for cifar
@@ -468,77 +260,8 @@ class Networks_Libs():
             h25 = linear(tf.reshape(h24, [self.opt.batch_size, -1]), 1, 'd_h13_linear')
 
             return h25
-        # --------------------------------------------------------------------------
-    #-------------------------------------------------------------------------------------------
-
-    # -------------------------------------------------------------------------------------------
-    # image generation on 64*64 resolution
-
-    def da(self, image, reuse=False):
-        with tf.variable_scope('d_a',reuse=tf.AUTO_REUSE) as scope:
-            if reuse:
-                scope.reuse_variables()
-            #compute the image output
-            h0 = tf.nn.leaky_relu(conv2d(image, 64, k_size=3, d_size=1, name='d_h0_conv'))
-            h0 = tf.nn.leaky_relu(conv2d(h0, 64, k_size=3, d_size=1, name='d_h1_conv'))+h0
-            h1 = tf.nn.avg_pool(h0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p0')
-            h2 = tf.nn.leaky_relu((conv2d(h1, 128, k_size=3, d_size=1, name='d_h2_conv')))
-            h2 = tf.nn.leaky_relu((conv2d(h2, 128, k_size=3, d_size=1, name='d_h3_conv')))+h2
-            h3 = tf.nn.avg_pool(h2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p1')
-            h4 = tf.nn.leaky_relu(conv2d(h3, 256, k_size=3, d_size=1, name='d_h4_conv'))
-            h4 = tf.nn.leaky_relu(conv2d(h4, 256, k_size=3, d_size=1, name='d_h5_conv'))+h4
-            h5 = tf.nn.avg_pool(h4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p3')
-            h6 = tf.nn.leaky_relu(conv2d(h5, 512, k_size=3, d_size=1, name='d_h6_conv'))
-            h6 = tf.nn.leaky_relu(conv2d(h6, 512, k_size=3, d_size=1, name='d_h7_conv'))+h6
-            h7 = tf.nn.avg_pool(h6, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p4')
-            h8 = linear(tf.reshape(h7, [self.opt.batch_size, -1]), 1, 'd_h8_linear')
-
-            return h8
-
-    def ga(self, z):
-        with tf.variable_scope('g_a') as scope:
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0,512,k_size=3,d_size=1,name='g_h0_conv')))+h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv')))+h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv')))+h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv')))+h6
-            h7 = tf.keras.layers.UpSampling2D(size=(2, 2))(h6)
-            h8 = tf.nn.leaky_relu(self.g_bn8(conv2d(h7, 32, k_size=3, d_size=1, name='g_h7_conv')))
-            h8 = tf.nn.leaky_relu(self.g_bn9(conv2d(h8, 32, k_size=3, d_size=1, name='g_h8_conv')))+h8
-            h9 = conv2d(h8, 3, k_size=3, d_size=1, name='g_h9_conv')
-
-            return tf.nn.tanh(h9)
-
-    def sa(self, z):
-        with tf.variable_scope('g_a') as scope:
-            scope.reuse_variables()
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h7 = tf.keras.layers.UpSampling2D(size=(2, 2))(h6)
-            h8 = tf.nn.leaky_relu(self.g_bn8(conv2d(h7, 32, k_size=3, d_size=1, name='g_h7_conv')))
-            h8 = tf.nn.leaky_relu(self.g_bn9(conv2d(h8, 32, k_size=3, d_size=1, name='g_h8_conv'))) + h8
-            h9 = conv2d(h8, 3, k_size=3, d_size=1, name='g_h9_conv')
-
-            return tf.nn.tanh(h9)
+  
+    #----------------------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------------------
     # image generation on 128*128 resolution
     def SCNN_celebA_d(self, image, reuse=False):
@@ -609,85 +332,6 @@ class Networks_Libs():
             h11 = conv2d(h10, 3, k_size=3, d_size=1, name='g_h5_conv')
 
             return tf.nn.tanh(h11)
-
-
-    def SCNN_celebA_double_d(self, image, reuse=False):
-        with tf.variable_scope('d_a', reuse=tf.AUTO_REUSE) as scope:
-            if reuse:
-                scope.reuse_variables()
-            # compute the image output
-            h0 = tf.nn.leaky_relu(conv2d(image, 32, k_size=3, d_size=1, name='d_h0_conv'))
-            h0 = tf.nn.leaky_relu(conv2d(h0, 32, k_size=3, d_size=1, name='d_h1_conv')) + h0
-            h1 = tf.nn.avg_pool(h0, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p0')
-            h2 = tf.nn.leaky_relu((conv2d(h1, 64, k_size=3, d_size=1, name='d_h2_conv')))
-            h2 = tf.nn.leaky_relu((conv2d(h2, 64, k_size=3, d_size=1, name='d_h3_conv'))) + h2
-            h3 = tf.nn.avg_pool(h2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p1')
-            h4 = tf.nn.leaky_relu(conv2d(h3, 128, k_size=3, d_size=1, name='d_h4_conv'))
-            h4 = tf.nn.leaky_relu(conv2d(h4, 128, k_size=3, d_size=1, name='d_h5_conv')) + h4
-            h5 = tf.nn.avg_pool(h4, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p3')
-            h6 = tf.nn.leaky_relu(conv2d(h5, 256, k_size=3, d_size=1, name='d_h6_conv'))
-            h6 = tf.nn.leaky_relu(conv2d(h6, 256, k_size=3, d_size=1, name='d_h7_conv')) + h6
-            h7 = tf.nn.avg_pool(h6, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p4')
-            h8 = tf.nn.leaky_relu(conv2d(h7, 512, k_size=3, d_size=1, name='d_h8_conv'))
-            h8 = tf.nn.leaky_relu(conv2d(h8, 512, k_size=3, d_size=1, name='d_h9_conv')) + h8
-            h9 = tf.nn.avg_pool(h8, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME', name='d_p5')
-            h10 = linear(tf.reshape(h9, [self.opt.batch_size, -1]), 1, 'd_h10_linear')
-
-            return h10
-
-    def SCNN_celebA_double_g(self, z):
-        with tf.variable_scope('g_a') as scope:
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h7 = tf.keras.layers.UpSampling2D(size=(2, 2))(h6)
-            h8 = tf.nn.leaky_relu(self.g_bn8(conv2d(h7, 32, k_size=3, d_size=1, name='g_h7_conv')))
-            h8 = tf.nn.leaky_relu(self.g_bn9(conv2d(h8, 32, k_size=3, d_size=1, name='g_h8_conv'))) + h8
-
-            h9 = tf.keras.layers.UpSampling2D(size=(2, 2))(h8)
-            h10 = tf.nn.leaky_relu(self.g_bn10(conv2d(h9, 16, k_size=3, d_size=1, name='g_h9_conv')))
-            h10 = tf.nn.leaky_relu(self.g_bn11(conv2d(h10, 16, k_size=3, d_size=1, name='g_h10_conv'))) + h10
-            h11 = conv2d(h10, 3, k_size=3, d_size=1, name='g_h11_conv')
-
-            return tf.nn.tanh(h11)
-
-    def SCNN_celebA_double_s(self, z):
-        with tf.variable_scope('g_a') as scope:
-            scope.reuse_variables()
-            z_ = linear(z, 512 * 4 * 4, 'g_h0_linear')
-            h = tf.reshape(z_, [-1, 4, 4, 512])
-            h0 = tf.nn.leaky_relu(self.g_bn0(h))
-            h0 = tf.nn.leaky_relu(self.g_bn1(conv2d(h0, 512, k_size=3, d_size=1, name='g_h0_conv'))) + h0
-            h1 = tf.keras.layers.UpSampling2D(size=(2, 2))(h0)
-            h2 = tf.nn.leaky_relu(self.g_bn2(conv2d(h1, 256, k_size=3, d_size=1, name='g_h1_conv')))
-            h2 = tf.nn.leaky_relu(self.g_bn3(conv2d(h2, 256, k_size=3, d_size=1, name='g_h2_conv'))) + h2
-            h3 = tf.keras.layers.UpSampling2D(size=(2, 2))(h2)
-            h4 = tf.nn.leaky_relu(self.g_bn4(conv2d(h3, 128, k_size=3, d_size=1, name='g_h3_conv')))
-            h4 = tf.nn.leaky_relu(self.g_bn5(conv2d(h4, 128, k_size=3, d_size=1, name='g_h4_conv'))) + h4
-            h5 = tf.keras.layers.UpSampling2D(size=(2, 2))(h4)
-            h6 = tf.nn.leaky_relu(self.g_bn6(conv2d(h5, 64, k_size=3, d_size=1, name='g_h5_conv')))
-            h6 = tf.nn.leaky_relu(self.g_bn7(conv2d(h6, 64, k_size=3, d_size=1, name='g_h6_conv'))) + h6
-            h7 = tf.keras.layers.UpSampling2D(size=(2, 2))(h6)
-            h8 = tf.nn.leaky_relu(self.g_bn8(conv2d(h7, 32, k_size=3, d_size=1, name='g_h7_conv')))
-            h8 = tf.nn.leaky_relu(self.g_bn9(conv2d(h8, 32, k_size=3, d_size=1, name='g_h8_conv'))) + h8
-
-            h9 = tf.keras.layers.UpSampling2D(size=(2, 2))(h8)
-            h10 = tf.nn.leaky_relu(self.g_bn10(conv2d(h9, 16, k_size=3, d_size=1, name='g_h9_conv')))
-            h10 = tf.nn.leaky_relu(self.g_bn11(conv2d(h10, 16, k_size=3, d_size=1, name='g_h10_conv'))) + h10
-            h11 = conv2d(h10, 3, k_size=3, d_size=1, name='g_h11_conv')
-
-            return tf.nn.tanh(h11)
-
 
 
     #base model for all expriments . it's for 3*64*64
