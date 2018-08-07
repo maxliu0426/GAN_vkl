@@ -59,7 +59,7 @@ class GAN():
         #compute the loss
         self.d_loss_real = tf.reduce_mean(self.D_real)
         self.d_loss_fake = tf.reduce_mean(self.D_fake)
-
+        
         self.g_loss = -self.d_loss_fake+tf.maximum(tf.square(self.d_loss_fake) - self.opt.m, 0)
 
         self.d_loss_real_sum = tf.summary.scalar('d_loss_real', self.d_loss_real)
@@ -70,7 +70,7 @@ class GAN():
                           self.opt.lamda *tf.maximum(tf.square(self.d_loss_real) -  self.opt.m, 0) + \
                           self.opt.lamda *tf.maximum(tf.square(self.d_loss_fake) -  self.opt.m, 0)
 
-        print(self.opt.m)
+     
         if self.opt.mode == "gradient_penalty":
             self.d_loss = self.d_loss_real - self.d_loss_fake + self.opt.lamda * self.gradient_penalty
 
@@ -84,8 +84,7 @@ class GAN():
         self.d_vars = [var for var in t_vars if 'd_' in var.name]
         self.g_vars = [var for var in t_vars if 'g_' in var.name]
         self.saver = tf.train.Saver(max_to_keep=150)
-        #self.globe_step=tf.Variable(0,trainable=False)
-        #self.lr=tf.train.exponential_decay(self.opt.lr,self.globe_step,1000,0.9)
+       
         self.d_optim = tf.train.AdamOptimizer(self.opt.lr, beta1=self.opt.beta_a, beta2=self.opt.beta_b).minimize(self.d_loss, var_list=self.d_vars)
         self.g_optim = tf.train.AdamOptimizer(self.opt.lr, beta1=self.opt.beta_a, beta2=self.opt.beta_b).minimize(self.g_loss, var_list=self.g_vars)
 
@@ -94,8 +93,6 @@ class GAN():
 
         self.d_sum = tf.summary.merge([self.d_loss_real_sum, self.d_loss_sum])
         self.g_sum=tf.summary.merge([self.d_loss_fake_sum,self.g_loss_sum])
-
-
 
         self.writer = tf.summary.FileWriter('./logs', self.sess.graph)
         self.sample_z = np.random.normal(0, 1, size=(self.opt.batch_size, self.opt.z_dimension))
@@ -129,6 +126,7 @@ class GAN():
         _, summary = self.sess.run([self.g_optim, self.g_sum], feed_dict={self.z: batch_z})
         self.writer.add_summary(summary, self.counter)
 
+        #calcalate the convergence measure
         if np.mod(self.counter, 100) == 1:
             samples = self.sess.run(self.samples, feed_dict={ self.z: self.sample_z })
 
@@ -139,31 +137,23 @@ class GAN():
             self.writer.add_summary(convergence_measure_summary, self.counter)
 
             print("convergence_measure:%.8f"%(convergence_measure))
-
+        #save the model
         if np.mod(self.counter,500)==2:
             self.save(self.opt.checkpoint_dir,self.counter)
-
-        #if np.mod(self.counter,500)==2 :#and self.counter>30000:
-           #self.image_sampler()
+        # calculate the inception score
+        if np.mod(self.counter,500)==2 :
+           self.image_sampler()
 
         self.counter+=1
 
-
+     # for sampling after the training
     def sampling(self):
-
         iters = int(math.ceil(float(self.opt.sample_num) / float(self.opt.batch_size)))
-
         for iter in range(iters):
             sample_z = np.random.normal(0, 1, size=(self.opt.batch_size, self.opt.z_dimension))
             samples = self.sess.run(self.samples, feed_dict={self.z: sample_z})
             images = np.minimum(np.maximum((samples + 1.) / 2., 0), 1)
             self.save_image(images,'./{}/sample_{:06d}.png'.format(self.opt.sample_dir, iter),8)
-
-    def single_image_save(self,images,path):
-        images = np.minimum(np.maximum((images + 1.) / 2., 0), 1)
-        for idx, image in enumerate(images):
-            if idx==1:
-                scipy.misc.imsave(path, image)
 
     def save_image(self,images,path,size):
         images=np.minimum(np.maximum((images+1.)/2.,0),1)
@@ -223,6 +213,8 @@ class GAN():
         print('Inception score mean: %4.4f /  %4.4f'%(mean,max(self.mean)))
         print('Inception score std:', std)
         with open('data.txt','a',encoding='ascii') as f:
+            f.write(str(self.counter))
+            f.write(':')
             f.write(str(mean))
             f.write(',  ')
             f.write(str(std))
