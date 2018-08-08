@@ -36,6 +36,12 @@ if you want to train the toy model:
  comparison of vkl constraint, gradient penalty and spectral normalization
  ![result1](images/Fig.1.jpg)
  
+ comparison of state-of-the-arts GAN models
+  ![result2](images/Table.1.jpg)
+  
+  Verfication of 
+ 
+ 
     
 
   
