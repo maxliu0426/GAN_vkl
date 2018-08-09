@@ -10,9 +10,11 @@ with tf.Session(config=run_config) as sess:
     # load options
     opt = options.option_initialize()
     # load dataset
-    #data_loader = datasetloader.datasetloader(opt)     #for image generation using celebA or imagenet
-    data_loader = cifarloader.cifarDataLoader(opt)      #for image generation using cifar
-
+    if opt.dataseyt == cifar:
+        data_loader = cifarloader.cifarDataLoader(opt)      #for image generation using cifar
+    else:
+        data_loader = datasetloader.datasetloader(opt)     #for image generation using celebA or imagenet
+    
     Gan=model.GAN(opt,sess)
     batch_iters=data_loader.batch_iters()
     print('batch_iters:',batch_iters)
