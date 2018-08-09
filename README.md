@@ -30,7 +30,7 @@ if you want to train the toy model:
 
     $python gan_toy.py
     
- ##Results
+ ## Results
  
  results on toy model:
  comparison of vkl constraint, gradient penalty and spectral normalization
