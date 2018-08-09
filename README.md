@@ -40,7 +40,7 @@ inception scores under different seettings；
  ![result2](images/Fig.5.jpg)
  
  variation of inception score with iteration on ResNet Based CNN
- ![result3](images/Fig.5.jpg)
+ ![result3](images/Fig.7.jpg)
  
  comparison of state-of-the-arts GAN models
   ![result4](images/Table.1.jpg)
